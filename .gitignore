@@ -1,0 +1,5 @@
+src/__pycache__/*
+credentials.json
+local_files.json
+drive_files.json
+token.json
