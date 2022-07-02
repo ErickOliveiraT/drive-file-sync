@@ -18,6 +18,7 @@ def check(path):
             "fileExtension": x.split('.')[1] if is_file else '',
             "md5Checksum": files.getMD5sum(path+x) if is_file else ''
         }
+        print(file)
         if not is_file:
             check(path+x+'\\')
         try:

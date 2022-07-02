@@ -30,5 +30,11 @@ def main():
     except HttpError as error:
         print(f'An error occurred: {error}')
 
+def get_file(file_id, creds):
+    if not creds:
+        print('Must provide creds')
+        return None
+    service = build('drive', 'v3', credentials=creds)
+
 if __name__ == '__main__':
     main()
