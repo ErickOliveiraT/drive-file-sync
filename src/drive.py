@@ -3,7 +3,6 @@ from googleapiclient.errors import HttpError
 from tinydb import TinyDB
 import auth
 import sys
-import os
 
 def main():
     try:
