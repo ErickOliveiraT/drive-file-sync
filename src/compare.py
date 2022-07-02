@@ -1,20 +1,15 @@
-from tinydb import TinyDB, Query
-import auth
+from tinydb import Query
 
-def compare():
-    creds = auth.get_credentials()
-    local_files = TinyDB('local_files.json')
-    drive_files = TinyDB('drive_files.json')
+def build_paths(drive_files):
     files = drive_files.all()
+    File = Query()
     for file in files:
         if len(file["parents"]) == 1:
-            file["path"] = '/'
+            file["path"] = './' + file["name"]
         else:
+            path = './'
             for i in range(1,len(file["parents"])):
-                File = Query()
-                name = drive_files.search(File.id == file["parents"][i])
-                print(f'Name: {name}')
-        print(file)
-        break
-
-compare()
+                match = drive_files.search(File.id == file["parents"][i])
+                path += match[0]["name"] + '/'
+            file["path"] = path + file["name"]
+        drive_files.update(file, File.id == file['id'])

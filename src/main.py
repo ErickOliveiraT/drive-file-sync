@@ -21,6 +21,9 @@ def main():
     #list remote drive files
     drive.list_files(remote_dir, service, drive_files)
 
+    #build path for drive files
+    drive.build_paths(drive_files)
+
 
 
 
