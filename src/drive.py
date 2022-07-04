@@ -24,6 +24,7 @@ def list_files(parent_id, drive_service, drive_files, parents=None):
             page_token = response.get('nextPageToken', None)
             if page_token is None:
                 break
+        return True
     except HttpError as error:
         print(f'An error occurred: {error}')
 
@@ -33,7 +34,7 @@ def build_paths(drive_files):
     cache = {}
     for file in files:
         if len(file["parents"]) == 1:
-            file["path"] = './' + file["name"]
+            file["relativePath"] = './' + file["name"]
         else:
             path = './'
             for i in range(1,len(file["parents"])):
@@ -43,5 +44,5 @@ def build_paths(drive_files):
                     match = drive_files.search(File.id == file["parents"][i])
                     path += match[0]["name"] + '/'
                     cache[file["parents"][i]] = match[0]["name"]
-            file["path"] = path + file["name"]
+            file["relativePath"] = path + file["name"]
         drive_files.update(file, File.id == file['id'])

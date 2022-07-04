@@ -1,10 +1,12 @@
 from googleapiclient.discovery import build
 from tinydb import TinyDB, where
+import explorer
 import drive
 import auth
 import sys
 
 remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n'
+local_dir = "C:/Users/erick/Desktop/teste/"
 
 def main():
     #remote drive files database
@@ -28,8 +30,14 @@ def main():
     print('Building paths for remote files')
     drive.build_paths(drive_files)
 
+    #local files database
+    local_files = TinyDB('local_files.json')
+    print('Cleaning database')
+    local_files.remove(where('id') > '')
 
-
+    #list local files
+    print('Checking local files')
+    explorer.list_files(local_dir, local_files)
 
 
 
