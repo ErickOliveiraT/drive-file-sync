@@ -1,5 +1,6 @@
 
 from googleapiclient.errors import HttpError
+from datetime import datetime
 from tinydb import Query
 
 def list_files(parent_id, drive_service, drive_files, parents=None):
@@ -17,7 +18,7 @@ def list_files(parent_id, drive_service, drive_files, parents=None):
                     file["type"] = 'file'
                 if parents:
                     file["parents"] = parents + file["parents"]
-                print(f'Checking {file["name"]}')
+                print(f'{datetime.now()}: Checking {file["name"]}')
                 drive_files.insert(file)
                 if file["type"] == 'folder':
                     list_files(file["id"], drive_service, drive_files, file["parents"])
@@ -26,7 +27,7 @@ def list_files(parent_id, drive_service, drive_files, parents=None):
                 break
         return True
     except HttpError as error:
-        print(f'An error occurred: {error}')
+        print(f'{datetime.now()}: An error occurred: {error}')
 
 def build_paths(drive_files):
     files = drive_files.all()
@@ -50,8 +51,8 @@ def build_paths(drive_files):
 #Verify local file on google drive
 def find_file(file, drive_files):
     File = Query()
-    #Search by MD5 checksum
-    if file["md5Checksum"]:
+    if file["type"] == 'file':
+        #Search by MD5 checksum
         match = drive_files.search(File.md5Checksum == file["md5Checksum"])
         if len(match) > 0:
             return {
@@ -59,8 +60,33 @@ def find_file(file, drive_files):
                 "sameFilename": file["name"] == match[0]["name"],
                 "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
                 "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
-                "samePath": file["relativePath"] == match[0]["relativePath"]
+                "samePath": file["relativePath"] == match[0]["relativePath"],
+                "sameHash": True
             }
         else:
-            return { "exists": False }
-    return True
+            match = drive_files.search(File.relativePath == file["relativePath"])
+            if len(match) > 0:
+                return { 
+                    "exists": True,
+                    "sameFilename": True,
+                    "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
+                    "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
+                    "samePath": True,
+                    "sameHash": False
+                }
+            else:
+                return {"exists": False}
+    elif file["type"] == 'folder':
+        #Search by relative path
+        match = drive_files.search(File.relativePath == file["relativePath"])
+        if len(match) > 0:
+            return {
+                "exists": True,
+                "sameFilename": True,
+                "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
+                "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
+                "samePath": True
+            }
+        else:
+            return {"exists": False}
+    return None

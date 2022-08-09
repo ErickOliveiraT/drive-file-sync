@@ -1,6 +1,4 @@
 from datetime import datetime
-from logging import root
-from tinydb import TinyDB, where
 import files
 import os
 
@@ -20,9 +18,9 @@ def list_files(path, local_files, root_dir):
             "md5Checksum": files.getMD5sum(path+x) if is_file else ''
         }
         file["relativePath"] = '.' + file["absPath"].split(root_dir)[1].replace('\\','/')
-        print(f'Checking {file["name"]}')
+        print(f'{datetime.now()}: Checking {file["name"]}')
         if not is_file:
-            list_files(path+x+'\\', local_files, root_dir)
+            list_files(path+x+'/', local_files, root_dir)
         try:
             local_files.insert(file)
         except:

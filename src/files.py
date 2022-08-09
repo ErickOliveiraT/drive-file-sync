@@ -1,3 +1,4 @@
+from datetime import datetime
 import hashlib
 import drive
 
@@ -9,8 +10,9 @@ def getMD5sum(filename, blocksize=65536):
     return hash.hexdigest()
 
 def compare(local_files, drive_files):
+    #Find local files on drive
     files = local_files.all()
     for file in files:
         res = drive.find_file(file, drive_files)
-        print(res)
+        print(f'{datetime.now()}: {file["name"]} {res}')
         #break
