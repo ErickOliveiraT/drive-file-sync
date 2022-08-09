@@ -46,3 +46,21 @@ def build_paths(drive_files):
                     cache[file["parents"][i]] = match[0]["name"]
             file["relativePath"] = path + file["name"]
         drive_files.update(file, File.id == file['id'])
+
+#Verify local file on google drive
+def find_file(file, drive_files):
+    File = Query()
+    #Search by MD5 checksum
+    if file["md5Checksum"]:
+        match = drive_files.search(File.md5Checksum == file["md5Checksum"])
+        if len(match) > 0:
+            return {
+                "exists": True,
+                "sameFilename": file["name"] == match[0]["name"],
+                "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
+                "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
+                "samePath": file["relativePath"] == match[0]["relativePath"]
+            }
+        else:
+            return { "exists": False }
+    return True
