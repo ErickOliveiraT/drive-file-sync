@@ -3,3 +3,6 @@ credentials.json
 local_files.json
 drive_files.json
 token.json
+comparison.json
+*.txt
+log.txt

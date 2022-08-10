@@ -1,4 +1,5 @@
 from datetime import datetime
+from tinydb import Query
 import files
 import os
 
@@ -26,3 +27,46 @@ def list_files(path, local_files, root_dir):
         except:
             pass
     return True
+
+#Verify google drive file in local files
+def find_file(file, local_files):
+    File = Query()
+    if file["type"] == 'file':
+        #Search by MD5 checksum
+        match = local_files.search(File.md5Checksum == file["md5Checksum"])
+        if len(match) > 0:
+            return {
+                "exists": True,
+                "sameFilename": file["name"] == match[0]["name"],
+                "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
+                "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
+                "samePath": file["relativePath"] == match[0]["relativePath"],
+                "sameHash": True
+            }
+        else:
+            match = local_files.search(File.relativePath == file["relativePath"])
+            if len(match) > 0:
+                return { 
+                    "exists": True,
+                    "sameFilename": True,
+                    "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
+                    "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
+                    "samePath": True,
+                    "sameHash": False
+                }
+            else:
+                return {"exists": False}
+    elif file["type"] == 'folder':
+        #Search by relative path
+        match = local_files.search(File.relativePath == file["relativePath"])
+        if len(match) > 0:
+            return {
+                "exists": True,
+                "sameFilename": True,
+                "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
+                "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
+                "samePath": True
+            }
+        else:
+            return {"exists": False}
+    return None
