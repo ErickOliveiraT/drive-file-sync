@@ -42,6 +42,17 @@ def verify_sync(local_files, drive_files, sync_deletions):
             action = 'move' #upload and delete
         elif not local_file["exists"]:
             action = 'upload'
-        print(f'{local_file["name"]}: {action}')
+        print(f'{datetime.now()}: [local] {local_file["name"]}: {action}')
         db_update = {"action": action}
         local_files.update(db_update, File.relativePath == local_file['relativePath'])
+    if sync_deletions:
+        for drive_file in drive_files.all():
+            if not drive_file["exists"]:
+                action = 'delete'
+            elif drive_file["exists"] and not drive_file["samePath"]:
+                action = 'delete'
+            else:
+                action = 'skip'
+            print(f'{datetime.now()}: [drive] {drive_file["name"]}: {action}')
+            db_update = {"action": action}
+            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
