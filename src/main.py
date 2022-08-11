@@ -6,6 +6,7 @@ import drive
 import files
 import auth
 import sys
+import os
 
 remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n'
 local_dir = "C:/Users/erick/Desktop/teste/"
@@ -13,37 +14,41 @@ sync_deletions = True
 
 def main():
     #remote drive files database
-    drive_files = TinyDB('drive_files.json')
-    # print(f'{datetime.now()}: Cleaning database')
-    # drive_files.remove(where('id') > '')
+    drive_files_db_path = 'drive_files.json'
+    print(f'{datetime.now()}: Cleaning database')
+    if os.path.isfile(drive_files_db_path):
+        os.remove(drive_files_db_path)
+    drive_files = TinyDB(drive_files_db_path)
 
-    # #start google drive service
-    # print(f'{datetime.now()}: Starting Google Drive Service')
-    # creds = auth.get_credentials()
-    # if not creds:
-    #     print(f'{datetime.now()}: Error while retrieving credentials')
-    #     sys.exit(0)
-    # service = build('drive', 'v3', credentials=creds)
+    #start google drive service
+    print(f'{datetime.now()}: Starting Google Drive Service')
+    creds = auth.get_credentials()
+    if not creds:
+        print(f'{datetime.now()}: Error while retrieving credentials')
+        sys.exit(0)
+    service = build('drive', 'v3', credentials=creds)
 
-    # #list remote drive files
-    # print(f'{datetime.now()}: Checking remote files')
-    # drive.list_files(remote_dir, service, drive_files)
+    #list remote drive files
+    print(f'{datetime.now()}: Checking remote files')
+    drive.list_files(remote_dir, service, drive_files)
 
-    # #build path for drive files
-    # print(f'{datetime.now()}: Building paths for remote files')
-    # drive.build_paths(drive_files)
+    #build path for drive files
+    print(f'{datetime.now()}: Building paths for remote files')
+    drive.build_paths(drive_files)
 
-    # #local files database
-    local_files = TinyDB('local_files.json')
-    # print(f'{datetime.now()}: Cleaning database')
-    # local_files.remove(where('id') > '')
+    #local files database
+    local_files_db_path = 'local_files.json'
+    print(f'{datetime.now()}: Cleaning database')
+    if os.path.isfile(local_files_db_path):
+        os.remove(local_files_db_path)
+    local_files = TinyDB(local_files_db_path)
 
-    # #list local files
-    # print(f'{datetime.now()}: Checking local files')
-    # explorer.list_files(local_dir, local_files, local_dir)
+    #list local files
+    print(f'{datetime.now()}: Checking local files')
+    explorer.list_files(local_dir, local_files, local_dir)
 
-    # #compare local and remote drives
-    # files.compare(local_files, drive_files)
+    #compare local and remote drives
+    files.compare(local_files, drive_files)
 
     #verify if files has to be transfered
     files.verify_sync(local_files, drive_files, sync_deletions)

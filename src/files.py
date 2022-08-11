@@ -27,6 +27,7 @@ def compare(local_files, drive_files):
         drive_files.update(res, File.relativePath == file['relativePath'])
         print(f'{datetime.now()}: {file["name"]} {res}')
 
+#verify if files has to be transfered
 def verify_sync(local_files, drive_files, sync_deletions):
     File = Query()
     for local_file in local_files.all():
@@ -53,6 +54,12 @@ def verify_sync(local_files, drive_files, sync_deletions):
                 action = 'delete'
             else:
                 action = 'skip'
+            print(f'{datetime.now()}: [drive] {drive_file["name"]}: {action}')
+            db_update = {"action": action}
+            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
+    else:
+        for drive_file in drive_files.all():
+            action = 'skip'
             print(f'{datetime.now()}: [drive] {drive_file["name"]}: {action}')
             db_update = {"action": action}
             drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
