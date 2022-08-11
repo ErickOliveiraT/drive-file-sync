@@ -12,9 +12,9 @@ def getMD5sum(filename, blocksize=65536):
     return hash.hexdigest()
 
 def compare(local_files, drive_files):
+    File = Query()
     #Find local files on drive
     files = local_files.all()
-    File = Query()
     for file in files:
         res = drive.find_file(file, drive_files)
         local_files.update(res, File.absPath == file['absPath'])
@@ -26,3 +26,22 @@ def compare(local_files, drive_files):
         res = explorer.find_file(file, local_files)
         drive_files.update(res, File.relativePath == file['relativePath'])
         print(f'{datetime.now()}: {file["name"]} {res}')
+
+def verify_sync(local_files, drive_files, sync_deletions):
+    File = Query()
+    for local_file in local_files.all():
+        if local_file["exists"] and local_file["samePath"]:
+            if local_file["type"] == 'file':
+                if local_file["sameHash"]:
+                    action = 'skip'
+                else:
+                    action = 'update'
+            else:
+                action = 'skip'
+        elif local_file["exists"] and not local_file["samePath"]:
+            action = 'move' #upload and delete
+        elif not local_file["exists"]:
+            action = 'upload'
+        print(f'{local_file["name"]}: {action}')
+        db_update = {"action": action}
+        local_files.update(db_update, File.relativePath == local_file['relativePath'])
