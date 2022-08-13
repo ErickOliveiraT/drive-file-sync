@@ -3,14 +3,15 @@ from tinydb import TinyDB
 from datetime import datetime
 import explorer
 import drive
-import files
 import time
 import auth
 import sys
 import os
 
-remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n'
-#local_dir = "C:/Users/erick/Desktop/teste/"
+remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n' #teste
+#remote_dir = '1nYTt2DpKVjRH1MnKMDHKIt8AcIUf4YYz' #teste2
+# local_dir = "C:/Users/erick/Desktop/teste/"
+#local_dir = "C:/Users/erick/Desktop/teste2/"
 local_dir = "D:/Arquivos/"
 sync_deletions = True
 
@@ -49,13 +50,10 @@ def main():
 
     #list local files
     print(f'{datetime.now()}: Checking local files')
-    explorer.list_files(local_dir, local_files, local_dir)
+    explorer.list_files(local_dir, local_files, local_dir, drive_files)
 
-    #compare local and remote drives
-    files.compare(local_files, drive_files)
-
-    #verify if files has to be transfered
-    files.verify_sync(local_files, drive_files, sync_deletions)
+    #verify if drive files has to be transfered
+    drive.verify_sync(drive_files, local_files, sync_deletions)
 
     print(f'\nTook {(time.time() - start_time)/60} minutes')
 

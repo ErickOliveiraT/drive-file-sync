@@ -1,9 +1,10 @@
 from datetime import datetime
 from tinydb import Query
 import files
+import drive
 import os
 
-def list_files(path, local_files, root_dir):
+def list_files(path, local_files, root_dir, drive_files):
     if root_dir[len(root_dir)-1] == '\\' or root_dir[len(root_dir)-1] == '/':
         root_dir = root_dir[:-1]
     for x in os.listdir(path):
@@ -21,8 +22,27 @@ def list_files(path, local_files, root_dir):
         }
         file["relativePath"] = '.' + file["absPath"].split(root_dir)[1].replace('\\','/')
         if not is_file:
-            list_files(path+x+'/', local_files, root_dir)
+            list_files(path+x+'/', local_files, root_dir, drive_files)
         try:
+            #Find file on google drive
+            res = drive.find_file(file, drive_files)
+            file.update(res)
+            print(f'{datetime.now()}: {file["name"]} {res}')
+            #verify if files has to be transfered
+            if file["exists"] and file["samePath"]:
+                if file["type"] == 'file':
+                    if file["sameHash"]:
+                        action = 'skip'
+                    else:
+                        action = 'update'
+                else:
+                    action = 'skip'
+            elif file["exists"] and not file["samePath"]:
+                action = 'move' #upload and delete
+            elif not file["exists"]:
+                action = 'upload'
+            print(f'{datetime.now()}: {file["name"]} action = {action}')
+            file["action"] = action
             local_files.insert(file)
         except:
             pass

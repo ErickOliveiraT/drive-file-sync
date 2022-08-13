@@ -2,6 +2,7 @@
 from googleapiclient.errors import HttpError
 from datetime import datetime
 from tinydb import Query
+import explorer
 
 def list_files(parent_id, drive_service, drive_files, parents=None):
     try:
@@ -90,3 +91,29 @@ def find_file(file, drive_files):
         else:
             return {"exists": False}
     return None
+
+#verify if drive files has to be transfered
+def verify_sync(drive_files, local_files, sync_deletions):
+    File = Query()
+    files = drive_files.all()
+    for drive_file in files:
+        #Find drive file on local files
+        res = explorer.find_file(drive_file, local_files)
+        print(f'{datetime.now()}: [drive] {drive_file["name"]} {res}')
+        if sync_deletions:
+            if not res["exists"]:
+                action = 'delete'
+            elif res["exists"] and not res["samePath"]:
+                action = 'delete'
+            else:
+                action = 'skip'
+            print(f'{datetime.now()}: {drive_file["name"]} action = {action}')
+            db_update = {"action": action}
+            db_update.update(res)
+            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
+        else:
+            action = 'skip'
+            print(f'{datetime.now()}: [drive] {drive_file["name"]}: {action}')
+            db_update = {"action": action}
+            db_update.update(res)
+            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
