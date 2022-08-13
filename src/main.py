@@ -1,18 +1,22 @@
 from googleapiclient.discovery import build
-from tinydb import TinyDB, where
+from tinydb import TinyDB
 from datetime import datetime
 import explorer
 import drive
 import files
+import time
 import auth
 import sys
 import os
 
 remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n'
-local_dir = "C:/Users/erick/Desktop/teste/"
+#local_dir = "C:/Users/erick/Desktop/teste/"
+local_dir = "D:/Arquivos/"
 sync_deletions = True
 
 def main():
+    start_time = time.time()
+
     #remote drive files database
     drive_files_db_path = 'drive_files.json'
     print(f'{datetime.now()}: Cleaning database')
@@ -52,6 +56,8 @@ def main():
 
     #verify if files has to be transfered
     files.verify_sync(local_files, drive_files, sync_deletions)
+
+    print(f'\nTook {(time.time() - start_time)/60} minutes')
 
 if __name__ == '__main__':
     main()
