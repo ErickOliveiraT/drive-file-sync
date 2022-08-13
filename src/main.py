@@ -8,9 +8,11 @@ import auth
 import sys
 import os
 
-remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n'
-local_dir = "C:/Users/erick/Desktop/teste/"
-#local_dir = "D:/Arquivos/"
+remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n' #teste
+#remote_dir = '1nYTt2DpKVjRH1MnKMDHKIt8AcIUf4YYz' #teste2
+# local_dir = "C:/Users/erick/Desktop/teste/"
+#local_dir = "C:/Users/erick/Desktop/teste2/"
+local_dir = "D:/Arquivos/"
 sync_deletions = True
 
 def main():
@@ -51,7 +53,7 @@ def main():
     explorer.list_files(local_dir, local_files, local_dir, drive_files)
 
     #verify if drive files has to be transfered
-    drive.verify_sync(drive_files, sync_deletions)
+    drive.verify_sync(drive_files, local_files, sync_deletions)
 
     print(f'\nTook {(time.time() - start_time)/60} minutes')
 

@@ -48,31 +48,6 @@ def list_files(path, local_files, root_dir, drive_files):
             pass
     return True
 
-def _list_files(path, local_files, root_dir):
-    if root_dir[len(root_dir)-1] == '\\' or root_dir[len(root_dir)-1] == '/':
-        root_dir = root_dir[:-1]
-    for x in os.listdir(path):
-        print(f'{datetime.now()}: Checking {x}')
-        stats = os.stat(path+'\\'+x)
-        is_file = os.path.isfile(path+'\\'+x)
-        file = {
-            "name": x,
-            "createdTime": str(datetime.fromtimestamp(stats.st_ctime)).replace(' ', 'T'),
-            "modifiedTime": str(datetime.fromtimestamp(stats.st_mtime)).replace(' ', 'T'),
-            "type": "file" if is_file else "folder",
-            "absPath": path + x,
-            "fileExtension": x.split('.')[1] if is_file and len(x.split('.')) > 1 else '',
-            "md5Checksum": files.getMD5sum(path+x) if is_file else ''
-        }
-        file["relativePath"] = '.' + file["absPath"].split(root_dir)[1].replace('\\','/')
-        if not is_file:
-            list_files(path+x+'/', local_files, root_dir)
-        try:
-            local_files.insert(file)
-        except:
-            pass
-    return True
-
 #Verify google drive file in local files
 def find_file(file, local_files):
     File = Query()
