@@ -90,3 +90,24 @@ def find_file(file, drive_files):
         else:
             return {"exists": False}
     return None
+
+#verify if drive files has to be transfered
+def verify_sync(drive_files, sync_deletions):
+    File = Query()
+    if sync_deletions:
+        for drive_file in drive_files.all():
+            if not drive_file["exists"]:
+                action = 'delete'
+            elif drive_file["exists"] and not drive_file["samePath"]:
+                action = 'delete'
+            else:
+                action = 'skip'
+            print(f'{datetime.now()}: [drive] {drive_file["name"]}: {action}')
+            db_update = {"action": action}
+            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
+    else:
+        for drive_file in drive_files.all():
+            action = 'skip'
+            print(f'{datetime.now()}: [drive] {drive_file["name"]}: {action}')
+            db_update = {"action": action}
+            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
