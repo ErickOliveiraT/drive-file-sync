@@ -5,14 +5,15 @@ import explorer
 import drive
 import time
 import auth
+import sync
 import sys
 import os
 
 remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n' #teste
 #remote_dir = '1nYTt2DpKVjRH1MnKMDHKIt8AcIUf4YYz' #teste2
-# local_dir = "C:/Users/erick/Desktop/teste/"
+local_dir = "C:/Users/erick/Desktop/teste/"
 #local_dir = "C:/Users/erick/Desktop/teste2/"
-local_dir = "D:/Arquivos/"
+# local_dir = "D:/Arquivos/"
 sync_deletions = True
 
 def main():
@@ -39,7 +40,7 @@ def main():
 
     #build path for drive files
     print(f'{datetime.now()}: Building paths for remote files')
-    drive.build_paths(drive_files)
+    drive.build_paths(drive_files, None)
 
     #local files database
     local_files_db_path = 'local_files.json'
@@ -55,7 +56,15 @@ def main():
     #verify if drive files has to be transfered
     drive.verify_sync(drive_files, local_files, sync_deletions)
 
-    print(f'\nTook {(time.time() - start_time)/60} minutes')
+    print(f'\nTook {(time.time() - start_time)/60} minutes\n')
+
+    #sync
+    print(f'{datetime.now()}: Starting file sync')
+    start_time = time.time()
+    sync.sync(local_files, drive_files, remote_dir, creds)
+    print(f'{datetime.now()}: File sync finished\n')
+    print(f'\nTook {(time.time() - start_time)/60} minutes\n')
+
 
 if __name__ == '__main__':
     main()

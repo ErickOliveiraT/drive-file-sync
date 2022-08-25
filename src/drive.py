@@ -1,5 +1,7 @@
 
+from __future__ import print_function
 from googleapiclient.errors import HttpError
+from googleapiclient.discovery import build
 from datetime import datetime
 from tinydb import Query
 import explorer
@@ -30,9 +32,14 @@ def list_files(parent_id, drive_service, drive_files, parents=None):
     except HttpError as error:
         print(f'{datetime.now()}: An error occurred: {error}')
 
-def build_paths(drive_files):
-    files = drive_files.all()
+def build_paths(drive_files, file_id):
     File = Query()
+    if not file_id:
+        files = drive_files.all()
+    else:
+        files = drive_files.search(File.id == file_id)
+        if len(files) == 0:
+            return
     cache = {}
     for file in files:
         if len(file["parents"]) == 1:
@@ -117,3 +124,47 @@ def verify_sync(drive_files, local_files, sync_deletions):
             db_update = {"action": action}
             db_update.update(res)
             drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
+
+#create folder on google drive
+def create_folder(folder_name, parents, creds):
+    try:
+        # create drive api client
+        service = build('drive', 'v3', credentials=creds)
+        file_metadata = {
+            'name': folder_name,
+            'mimeType': 'application/vnd.google-apps.folder',
+            'parents': parents
+        }
+        # pylint: disable=maybe-no-member
+        file = service.files().create(body=file_metadata,
+         fields='id, name, parents, md5Checksum, fileExtension, size, createdTime, modifiedTime').execute()
+        print(f'{datetime.now()}: Folder has created with ID "{file.get("id")}"')
+    except HttpError as error:
+        print(F'An error occurred: {error}')
+        return None
+    return file
+
+#get ids of parents folders of a file
+def get_parent_ids(local_file_path, drive_files, remote_dir):
+    print(f'[debug] LOCAL_FILE_PATH = {local_file_path}')
+    File = Query()
+    match = drive_files.search(File.relativePath == local_file_path)
+    print(f'[debug] LEN(MATCH) = {len(match)}')
+    if len(match) > 0:
+        print(f'[debug] FOUND EXACT MATCH')
+        return match[0]["parents"]
+    parents = local_file_path.split('/')[1:-1]
+    if len(parents) == 0:
+        return [remote_dir]
+    current_path = '.'
+    search = list()
+    for p in parents:
+        current_path += '/' + p
+        search.append(current_path)
+    for p in search[::-1]:
+        print(f'[debug] SEARCHING {p}')
+        match = drive_files.search(File.relativePath == p)
+        if len(match) > 0:
+            print(f'[debug] FOUND {p}')
+            return [match[0]["id"]]
+    return None
