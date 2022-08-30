@@ -1,10 +1,11 @@
-
 from __future__ import print_function
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 from datetime import datetime
 from tinydb import Query
 import explorer
+import files
 
 def list_files(parent_id, drive_service, drive_files, parents=None):
     try:
@@ -138,7 +139,6 @@ def create_folder(folder_name, parents, creds):
         # pylint: disable=maybe-no-member
         file = service.files().create(body=file_metadata,
          fields='id, name, parents, md5Checksum, fileExtension, size, createdTime, modifiedTime').execute()
-        print(f'{datetime.now()}: Folder has created with ID "{file.get("id")}"')
     except HttpError as error:
         print(F'An error occurred: {error}')
         return None
@@ -146,12 +146,12 @@ def create_folder(folder_name, parents, creds):
 
 #get ids of parents folders of a file
 def get_parent_ids(local_file_path, drive_files, remote_dir):
-    print(f'[debug] LOCAL_FILE_PATH = {local_file_path}')
+    #print(f'[debug] LOCAL_FILE_PATH = {local_file_path}')
     File = Query()
     match = drive_files.search(File.relativePath == local_file_path)
-    print(f'[debug] LEN(MATCH) = {len(match)}')
+    #print(f'[debug] LEN(MATCH) = {len(match)}')
     if len(match) > 0:
-        print(f'[debug] FOUND EXACT MATCH')
+        #print(f'[debug] FOUND EXACT MATCH')
         return match[0]["parents"]
     parents = local_file_path.split('/')[1:-1]
     if len(parents) == 0:
@@ -162,9 +162,28 @@ def get_parent_ids(local_file_path, drive_files, remote_dir):
         current_path += '/' + p
         search.append(current_path)
     for p in search[::-1]:
-        print(f'[debug] SEARCHING {p}')
+        #print(f'[debug] SEARCHING {p}')
         match = drive_files.search(File.relativePath == p)
         if len(match) > 0:
-            print(f'[debug] FOUND {p}')
+            #print(f'[debug] FOUND {p}')
             return [match[0]["id"]]
     return None
+
+#upload file to google drive
+def upload_basic(filename, path, parents, creds):
+    try:
+        # create drive api client
+        service = build('drive', 'v3', credentials=creds)
+        file_metadata = {'name': filename, 'parents': parents}
+        mime = files.getMIMEType(path)
+        media = MediaFileUpload(path, mimetype=mime)
+        # pylint: disable=maybe-no-member
+        file = service.files().create(
+            body=file_metadata, 
+            media_body=media,
+            fields='id, name, parents, md5Checksum, fileExtension, size, createdTime, modifiedTime'
+        ).execute()
+    except HttpError as error:
+        print(F'An error occurred: {error}')
+        file = None
+    return file

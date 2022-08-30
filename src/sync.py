@@ -12,10 +12,11 @@ def sync(local_files, drive_files, remote_dir, creds):
     for folder in qry:
         print(f'{datetime.now()}: Creating folder "{folder["name"]}"')
         parents = drive.get_parent_ids(folder['relativePath'], drive_files, remote_dir)
-        print(f'[debug] PARENTS OF {folder["name"]} = ', parents)
+        #print(f'[debug] PARENTS OF {folder["name"]} = ', parents)
         if parents and len(parents) > 0:
             res = drive.create_folder(folder["name"], parents, creds)
             if res and res["id"]:
+                print(f'{datetime.now()}: Folder has created with ID "{res["id"]}"')
                 #print(f'[debug] res = {res}')
                 db_update = {"exists": True}
                 local_files.update(db_update, File.relativePath == folder['relativePath'])
@@ -23,3 +24,12 @@ def sync(local_files, drive_files, remote_dir, creds):
                 new_folder.update(res)
                 #print(f'[debug] db_update = {db_update}')
                 drive_files.insert(new_folder)
+
+    #create non-existing files on google drive
+    qry = local_files.search((File.type == 'file') & (File.action == 'upload'))
+    for file in qry:
+        print(f'{datetime.now()}: Uploading {file["name"]}')
+        parents = drive.get_parent_ids(file["relativePath"], drive_files, remote_dir)
+        #print(f'[debug] parents = {parents}')
+        drive.upload_basic(file["name"], file["absPath"], parents, creds)
+    print(f'{datetime.now()}: All files uploaded!')

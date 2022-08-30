@@ -63,6 +63,7 @@ def main():
     start_time = time.time()
     sync.sync(local_files, drive_files, remote_dir, creds)
     print(f'{datetime.now()}: File sync finished\n')
+    
     print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
 

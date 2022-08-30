@@ -1,8 +1,5 @@
-from datetime import datetime
-from tinydb import Query
-import explorer
 import hashlib
-import drive
+import magic
 
 def getMD5sum(filename, blocksize=65536):
     try:
@@ -13,3 +10,7 @@ def getMD5sum(filename, blocksize=65536):
         return hash.hexdigest()
     except:
         return ''
+
+def getMIMEType(filepath):
+    mime = magic.Magic(mime=True)
+    return mime.from_file(filepath)
