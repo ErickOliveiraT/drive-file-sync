@@ -11,6 +11,8 @@ import os
 
 remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n' #teste
 #remote_dir = '1nYTt2DpKVjRH1MnKMDHKIt8AcIUf4YYz' #teste2
+#remote_dir = '1DIorRhnEG6o_ReCavg3BrkPAVZTxQ2gA' #teste maior
+#local_dir = 'C:/Users/erick/Desktop/Projetos/Enercred-Bill-Downloader/'
 local_dir = "C:/Users/erick/Desktop/teste/"
 #local_dir = "C:/Users/erick/Desktop/teste2/"
 # local_dir = "D:/Arquivos/"
@@ -63,7 +65,14 @@ def main():
     start_time = time.time()
     sync.sync(local_files, drive_files, remote_dir, creds)
     print(f'{datetime.now()}: File sync finished\n')
-    
+
+    #Atualizar db local ao fazer upload de arquivos
+    #criar perfis de sincronização
+    #deleções de arquivo
+    #atualizações de arquivo (verificar)
+    #criar agendamentos de sincronizações
+    #verificar barra no finals do path de entrada
+
     print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
 

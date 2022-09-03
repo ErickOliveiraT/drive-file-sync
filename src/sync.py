@@ -31,5 +31,8 @@ def sync(local_files, drive_files, remote_dir, creds):
         print(f'{datetime.now()}: Uploading {file["name"]}')
         parents = drive.get_parent_ids(file["relativePath"], drive_files, remote_dir)
         #print(f'[debug] parents = {parents}')
-        drive.upload_basic(file["name"], file["absPath"], parents, creds)
+        res = drive.upload_basic(file["name"], file["absPath"], parents, creds)
+        new_file = {"type": "file", "relativePath": file["relativePath"] }
+        new_file.update(res)
+        drive_files.insert(new_file)
     print(f'{datetime.now()}: All files uploaded!')
