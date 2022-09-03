@@ -2,23 +2,16 @@ from googleapiclient.discovery import build
 from datetime import datetime
 from tinydb import TinyDB
 import explorer
+import profiles
 import drive
 import time
+import json
 import auth
 import sync
 import sys
 import os
 
-remote_dir = '1l-sKq0MPteFHFQO_iDUYqLfCe-OcY31n' #teste
-#remote_dir = '1nYTt2DpKVjRH1MnKMDHKIt8AcIUf4YYz' #teste2
-#remote_dir = '1DIorRhnEG6o_ReCavg3BrkPAVZTxQ2gA' #teste maior
-#local_dir = 'C:/Users/erick/Desktop/Projetos/Enercred-Bill-Downloader/'
-local_dir = "C:/Users/erick/Desktop/teste/"
-#local_dir = "C:/Users/erick/Desktop/teste2/"
-# local_dir = "D:/Arquivos/"
-sync_deletions = True
-
-def main():
+def main(profile):
     start_time = time.time()
 
     #remote drive files database
@@ -38,7 +31,7 @@ def main():
 
     #list remote drive files
     print(f'{datetime.now()}: Checking remote files')
-    drive.list_files(remote_dir, service, drive_files)
+    drive.list_files(profile.get('remote_folder_id'), service, drive_files)
 
     #build path for drive files
     print(f'{datetime.now()}: Building paths for remote files')
@@ -53,28 +46,36 @@ def main():
 
     #list local files
     print(f'{datetime.now()}: Checking local files')
-    explorer.list_files(local_dir, local_files, local_dir, drive_files)
+    explorer.list_files(profile.get('local_folder_path'), local_files, profile.get('local_folder_path'), drive_files)
 
     #verify if drive files has to be transfered
-    drive.verify_sync(drive_files, local_files, sync_deletions)
+    drive.verify_sync(drive_files, local_files, profile.get('sync_deletions'))
 
     print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
     #sync
     print(f'{datetime.now()}: Starting file sync')
     start_time = time.time()
-    sync.sync(local_files, drive_files, remote_dir, creds)
+    sync.sync(local_files, drive_files, profile.get('remote_folder_id'), creds)
     print(f'{datetime.now()}: File sync finished\n')
-
-    #Atualizar db local ao fazer upload de arquivos
-    #criar perfis de sincronização
-    #deleções de arquivo
-    #atualizações de arquivo (verificar)
-    #criar agendamentos de sincronizações
-    #verificar barra no finals do path de entrada
 
     print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
 
 if __name__ == '__main__':
-    main()
+    while True:
+        print('[1] Create profile\n[2] Load profile\n[3] Exit\n')
+        option = int(input('Option: '))
+        if option == 1:
+            profiles.create_profile()
+        elif option == 2:
+            filename = profiles.list_profiles()
+            with open(filename) as json_file:
+                profile = json.load(json_file)
+            print('')
+            main(profile)
+        elif option == 3:
+            sys.exit(0)
+        else:
+            print('\nInvalid option')
+            sys.exit(0)
