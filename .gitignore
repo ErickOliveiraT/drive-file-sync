@@ -7,3 +7,5 @@ comparison.json
 *.txt
 log.txt
 profiles/*
+data/*
+test.json

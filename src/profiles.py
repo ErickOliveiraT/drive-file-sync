@@ -28,6 +28,7 @@ def create_profile():
         else:
             profile['ignored_folders_list'].append(option)
     option = input('Profile name: ')
+    profile['profile_name'] = option
     json_string = json.dumps(profile)
     with open('./profiles/' + option + '.json', 'w') as outfile:
         outfile.write(json_string)
