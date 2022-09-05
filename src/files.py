@@ -14,3 +14,6 @@ def getMD5sum(filename, blocksize=65536):
 def getMIMEType(filepath):
     mime = magic.Magic(mime=True)
     return mime.from_file(filepath)
+
+def getProfileName(path):
+    return path.split('./profiles/')[1].split('.json')[0]

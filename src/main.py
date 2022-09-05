@@ -4,6 +4,7 @@ from tinydb import TinyDB
 import explorer
 import profiles
 import drive
+import files
 import time
 import json
 import auth
@@ -64,7 +65,7 @@ def main(profile):
 
 if __name__ == '__main__':
     while True:
-        print('[1] Create profile\n[2] Load profile\n[3] Exit\n')
+        print('[1] Create profile\n[2] Load profile\n[3] Delete profile\n[4] Exit\n')
         option = int(input('Option: '))
         if option == 1:
             profiles.create_profile()
@@ -75,6 +76,12 @@ if __name__ == '__main__':
             print('')
             main(profile)
         elif option == 3:
+            filename = profiles.list_profiles()
+            option = input(f'\nAre you sure you want to delete "{files.getProfileName(filename)}"? (y/n): ')
+            if option == 'y' or option == 'Y':
+                os.remove(filename)
+            print('')
+        elif option == 4:
             sys.exit(0)
         else:
             print('\nInvalid option')

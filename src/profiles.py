@@ -27,13 +27,12 @@ def create_profile():
             break
         else:
             profile['ignored_folders_list'].append(option)
-    option = input('Save this profile? (y/n): ')
-    if option == 'y' or option == 'Y':
-        option = input('Profile name: ')
-        json_string = json.dumps(profile)
-        with open('./profiles/' + option + '.json', 'w') as outfile:
-            outfile.write(json_string)
+    option = input('Profile name: ')
+    json_string = json.dumps(profile)
+    with open('./profiles/' + option + '.json', 'w') as outfile:
+        outfile.write(json_string)
     print('')
+    return profile
 
 def list_profiles():
     op = 1
