@@ -35,4 +35,6 @@ def sync(local_files, drive_files, remote_dir, creds):
         new_file = {"type": "file", "relativePath": file["relativePath"] }
         new_file.update(res)
         drive_files.insert(new_file)
+        db_update = {"exists": True, "samePath": True, "sameHash": True, "action": "skip"}
+        local_files.update(db_update, File.relativePath == file["relativePath"])
     print(f'{datetime.now()}: All files uploaded!')
