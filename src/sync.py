@@ -45,6 +45,7 @@ def sync(local_files, drive_files, remote_dir, creds):
         res = drive.delete(file['remoteFileId'], creds)
         if res:
             print(f'{datetime.now()}: Deleted "{file["name"]}" from Drive')
+            drive_files.remove(where('relativePath') == file['relativePath'])
         print(f'{datetime.now()}: Uploading {file["name"]}')
         parents = drive.get_parent_ids(file["relativePath"], drive_files, remote_dir)
         res = drive.upload_basic(file["name"], file["absPath"], parents, creds)
@@ -61,4 +62,3 @@ def sync(local_files, drive_files, remote_dir, creds):
         if res:
             print(f'{datetime.now()}: Deleted "{file["name"]}" from Drive')
             drive_files.remove(where('relativePath') == file['relativePath'])
-        
