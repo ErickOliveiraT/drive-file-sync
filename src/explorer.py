@@ -8,11 +8,11 @@ def list_files(path, local_files, root_dir, drive_files, ignore=[]):
     if root_dir[len(root_dir)-1] == '\\' or root_dir[len(root_dir)-1] == '/':
         root_dir = root_dir[:-1]
     for x in os.listdir(path):
-        if x in ignore:
-            continue
         print(f'{datetime.now()}: Checking {x}')
         stats = os.stat(path+'\\'+x)
         is_file = os.path.isfile(path+'\\'+x)
+        if not is_file and x in ignore:
+            continue
         file = {
             "name": x,
             "createdTime": str(datetime.fromtimestamp(stats.st_ctime)).replace(' ', 'T'),

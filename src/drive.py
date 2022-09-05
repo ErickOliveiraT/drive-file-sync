@@ -70,7 +70,8 @@ def find_file(file, drive_files):
                 "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
                 "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
                 "samePath": file["relativePath"] == match[0]["relativePath"],
-                "sameHash": True
+                "sameHash": True,
+                "remoteFileId": match[0]['id']
             }
         else:
             match = drive_files.search(File.relativePath == file["relativePath"])
@@ -81,7 +82,8 @@ def find_file(file, drive_files):
                     "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
                     "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
                     "samePath": True,
-                    "sameHash": False
+                    "sameHash": False,
+                    "remoteFileId": match[0]['id']
                 }
             else:
                 return {"exists": False}
@@ -94,7 +96,8 @@ def find_file(file, drive_files):
                 "sameFilename": True,
                 "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
                 "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
-                "samePath": True
+                "samePath": True,
+                "remoteFileId": match[0]['id']
             }
         else:
             return {"exists": False}
@@ -172,12 +175,10 @@ def get_parent_ids(local_file_path, drive_files, remote_dir):
 #upload file to google drive
 def upload_basic(filename, path, parents, creds):
     try:
-        # create drive api client
         service = build('drive', 'v3', credentials=creds)
         file_metadata = {'name': filename, 'parents': parents}
         mime = files.getMIMEType(path)
         media = MediaFileUpload(path, mimetype=mime)
-        # pylint: disable=maybe-no-member
         file = service.files().create(
             body=file_metadata, 
             media_body=media,
@@ -187,3 +188,13 @@ def upload_basic(filename, path, parents, creds):
         print(F'An error occurred: {error}')
         file = None
     return file
+
+#delete a file on google drive
+def delete(file_id, creds):
+    try:
+        service = build('drive', 'v3', credentials=creds)
+        service.files().delete(fileId=file_id, fields='id, name').execute()
+        return True
+    except HttpError as error:
+        print(F'An error occurred: {error}')
+        return False
