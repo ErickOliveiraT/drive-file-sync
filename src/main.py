@@ -16,7 +16,7 @@ def main(profile):
     start_time = time.time()
 
     #remote drive files database
-    drive_files_db_path = '/.data/' + profile['profile_name'] + '_remote.json'
+    drive_files_db_path = './data/' + profile['profile_name'] + '_remote.json'
     print(f'{datetime.now()}: Cleaning database')
     if os.path.isfile(drive_files_db_path):
         os.remove(drive_files_db_path)
@@ -39,7 +39,7 @@ def main(profile):
     drive.build_paths(drive_files, None)
 
     #local files database
-    local_files_db_path = '/.data/' + profile['profile_name'] + '_local.json'
+    local_files_db_path = './data/' + profile['profile_name'] + '_local.json'
     print(f'{datetime.now()}: Cleaning database')
     if os.path.isfile(local_files_db_path):
         os.remove(local_files_db_path)
@@ -47,7 +47,7 @@ def main(profile):
 
     #list local files
     print(f'{datetime.now()}: Checking local files')
-    explorer.list_files(profile.get('local_folder_path'), local_files, profile.get('local_folder_path'), drive_files)
+    explorer.list_files(profile.get('local_folder_path'), local_files, profile.get('local_folder_path'), drive_files, profile.get('ignored_folders'))
 
     #verify if drive files has to be transfered
     drive.verify_sync(drive_files, local_files, profile.get('sync_deletions'))

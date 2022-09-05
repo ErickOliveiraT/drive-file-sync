@@ -7,7 +7,8 @@ profile = {
     "local_folder_path": '',
     "remote_folder_id": '',
     "sync_deletions": False,
-    "ignored_folders_list": []
+    "ignored_folders": [],
+    "profile_name": ""
 }
 
 def create_profile():
@@ -26,7 +27,7 @@ def create_profile():
         if option == '':
             break
         else:
-            profile['ignored_folders_list'].append(option)
+            profile['ignored_folders'].append(option)
     option = input('Profile name: ')
     profile['profile_name'] = option
     json_string = json.dumps(profile)

@@ -4,10 +4,12 @@ import files
 import drive
 import os
 
-def list_files(path, local_files, root_dir, drive_files):
+def list_files(path, local_files, root_dir, drive_files, ignore=[]):
     if root_dir[len(root_dir)-1] == '\\' or root_dir[len(root_dir)-1] == '/':
         root_dir = root_dir[:-1]
     for x in os.listdir(path):
+        if x in ignore:
+            continue
         print(f'{datetime.now()}: Checking {x}')
         stats = os.stat(path+'\\'+x)
         is_file = os.path.isfile(path+'\\'+x)
@@ -22,7 +24,7 @@ def list_files(path, local_files, root_dir, drive_files):
         }
         file["relativePath"] = '.' + file["absPath"].split(root_dir)[1].replace('\\','/')
         if not is_file:
-            list_files(path+x+'/', local_files, root_dir, drive_files)
+            list_files(path+x+'/', local_files, root_dir, drive_files, ignore)
         try:
             #Find file on google drive
             res = drive.find_file(file, drive_files)
