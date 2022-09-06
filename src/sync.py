@@ -58,10 +58,19 @@ def sync(local_files, drive_files, remote_dir, creds):
             local_files.update(db_update, File.relativePath == file["relativePath"])
     print(f'{datetime.now()}: All files updated!')
 
-    #delete remote files witch doesn't exist
-    qry = drive_files.search(File.action == 'delete')
+    #delete remote folders witch doesn't exist
+    qry = drive_files.search((File.action == 'delete') & (File.type == 'folder'))
+    for folder in qry:
+        print(f'{datetime.now()}: Deleting {folder["name"]} ({folder["id"]})')
+        res = drive.delete(folder['id'], creds)
+        if res:
+            print(f'{datetime.now()}: Deleted "{folder["name"]}" from Drive')
+            drive_files.remove(where('relativePath') == folder['relativePath'])
+
+    #delete remote files witch doesn't exist   
+    qry = drive_files.search((File.action == 'delete') & (File.type == 'file'))
     for file in qry:
-        print(f'{datetime.now()}: Deleting {file["name"]}')
+        print(f'{datetime.now()}: Deleting {file["name"]} ({file["id"]})')
         res = drive.delete(file['id'], creds)
         if res:
             print(f'{datetime.now()}: Deleted "{file["name"]}" from Drive')

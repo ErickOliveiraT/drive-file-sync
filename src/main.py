@@ -17,12 +17,11 @@ def run(profile, action):
 
     #remote drive files database
     drive_files_db_path = './data/' + profile['profile_name'] + '_remote.json'
-    drive_files = TinyDB(drive_files_db_path)
     if action == 'start':
         print(f'{datetime.now()}: Cleaning database')
         if os.path.isfile(drive_files_db_path):
             os.remove(drive_files_db_path)
-        drive_files = TinyDB(drive_files_db_path)
+    drive_files = TinyDB(drive_files_db_path)
 
     #start google drive service
     print(f'{datetime.now()}: Starting Google Drive Service')
@@ -32,7 +31,6 @@ def run(profile, action):
         sys.exit(0)
     service = build('drive', 'v3', credentials=creds)
 
-    
     if action == 'start':
         #list remote drive files
         print(f'{datetime.now()}: Checking remote files')
@@ -44,13 +42,13 @@ def run(profile, action):
 
     #local files database
     local_files_db_path = './data/' + profile['profile_name'] + '_local.json'
-    local_files = TinyDB(local_files_db_path)
     if action == 'start':
         print(f'{datetime.now()}: Cleaning database')
         if os.path.isfile(local_files_db_path):
             os.remove(local_files_db_path)
-        local_files = TinyDB(local_files_db_path)
+    local_files = TinyDB(local_files_db_path)
 
+    if action == 'start':
         #list local files
         print(f'{datetime.now()}: Checking local files')
         explorer.list_files(profile.get('local_folder_path'), local_files, profile.get('local_folder_path'), drive_files, profile.get('ignored_folders'))
