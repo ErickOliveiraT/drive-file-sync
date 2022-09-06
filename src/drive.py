@@ -178,6 +178,8 @@ def upload_basic(filename, path, parents, creds):
         service = build('drive', 'v3', credentials=creds)
         file_metadata = {'name': filename, 'parents': parents}
         mime = files.getMIMEType(path)
+        if not mime:
+            return None
         media = MediaFileUpload(path, mimetype=mime)
         file = service.files().create(
             body=file_metadata, 
