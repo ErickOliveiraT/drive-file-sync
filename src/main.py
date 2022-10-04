@@ -12,6 +12,17 @@ import sync
 import sys
 import os
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def run(profile, action):
     start_time = time.time()
 
@@ -69,7 +80,7 @@ def run(profile, action):
 
 if __name__ == '__main__':
     while True:
-        print('[1] Create profile\n[2] Start synchronization\n[3] Delete profile\n[4] Resume synchronization\n[5] Exit\n')
+        print('[1] Create profile\n[2] Start synchronization\n[3] Delete profile\n[4] Resume synchronization\n[5] Synchronization status\n[6] Exit\n')
         option = int(input('Option: '))
         if option == 1:
             profiles.create_profile()
@@ -92,6 +103,12 @@ if __name__ == '__main__':
             print('')
             run(profile, 'resume')
         elif option == 5:
+            filename = profiles.list_profiles()
+            with open(filename) as json_file:
+                profile = json.load(json_file)
+            print('')
+            sync.status(profile)
+        elif option == 6:
             sys.exit(0)
         else:
             print('\nInvalid option')

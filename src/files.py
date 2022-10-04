@@ -12,11 +12,14 @@ def getMD5sum(filename, blocksize=65536):
         return ''
 
 def getMIMEType(filepath):
-    mime = magic.Magic(mime=True)
-    mimetype = mime.from_file(filepath)
-    if mimetype.startswith('cannot open'):
+    try:
+        mime = magic.Magic(mime=True)
+        mimetype = mime.from_file(filepath)
+        if mimetype.startswith('cannot open'):
+            return None
+        return mimetype
+    except:
         return None
-    return mimetype
 
 def getProfileName(path):
     return path.split('./profiles/')[1].split('.json')[0]

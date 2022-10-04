@@ -1,5 +1,6 @@
 from datetime import datetime
-from tinydb import Query, where
+from tabulate import tabulate
+from tinydb import TinyDB, Query, where
 import drive
 
 def sync(local_files, drive_files, remote_dir, creds):
@@ -75,3 +76,17 @@ def sync(local_files, drive_files, remote_dir, creds):
         if res:
             print(f'{datetime.now()}: Deleted "{file["name"]}" from Drive')
             drive_files.remove(where('relativePath') == file['relativePath'])
+
+def status(profile):
+    local_files_db_path = './data/' + profile['profile_name'] + '_local.json'
+    local_files = TinyDB(local_files_db_path)
+    table = [['File','Action']]
+
+    for file in local_files.all():
+        local_folder_path = profile['local_folder_path']
+        filename = file['absPath'].split(local_folder_path)[1]
+        if file['action'] != 'skip':
+            table.append([filename, file['action']])
+
+    print(tabulate(table, headers='firstrow', tablefmt='fancy_grid', showindex=True))
+    return print('\n')
