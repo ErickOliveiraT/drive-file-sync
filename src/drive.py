@@ -64,14 +64,27 @@ def find_file(file, drive_files):
         #Search by MD5 checksum
         match = drive_files.search(File.md5Checksum == file["md5Checksum"])
         if len(match) > 0:
+            for remote_file in match:
+                if file["relativePath"] == remote_file["relativePath"]:
+                    return {
+                        "exists": True,
+                        "sameFilename": file["name"] == remote_file["name"],
+                        "sameCreateDate": file["createdTime"].split('.')[0] == remote_file["createdTime"].split('.')[0],
+                        "sameModificationDate": file["modifiedTime"].split('.')[0] == remote_file["modifiedTime"].split('.')[0],
+                        "samePath": True,
+                        "sameHash": True,
+                        "remoteFileId": remote_file['id'],
+                        "debug": 1
+                    }
             return {
                 "exists": True,
-                "sameFilename": file["name"] == match[0]["name"],
-                "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
-                "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
-                "samePath": file["relativePath"] == match[0]["relativePath"],
+                "sameFilename": file["name"] == remote_file["name"],
+                "sameCreateDate": file["createdTime"].split('.')[0] == remote_file["createdTime"].split('.')[0],
+                "sameModificationDate": file["modifiedTime"].split('.')[0] == remote_file["modifiedTime"].split('.')[0],
+                "samePath": False,
                 "sameHash": True,
-                "remoteFileId": match[0]['id']
+                "remoteFileId": remote_file['id'],
+                "debug": 2
             }
         else:
             match = drive_files.search(File.relativePath == file["relativePath"])
@@ -113,8 +126,6 @@ def verify_sync(drive_files, local_files, sync_deletions):
         print(f'{datetime.now()}: [drive] {drive_file["name"]} {res}')
         if sync_deletions:
             if not res["exists"]:
-                action = 'delete'
-            elif res["exists"] and not res["samePath"]:
                 action = 'delete'
             else:
                 action = 'skip'
@@ -200,3 +211,45 @@ def delete(file_id, creds):
     except HttpError as error:
         print(F'An error occurred: {error}')
         return {'deleted': False, 'reason': error.error_details[0]['reason']}
+
+#Moves a file in Google Drive from one location to another
+def move_file(file_id, current_parents, new_parents, creds):
+    print('[debug] file_id: ', file_id)
+    print('[debug] current_parents: ', current_parents)
+    print('[debug] new_parents: ', new_parents)
+    difference_1 = set(current_parents).difference(set(new_parents))
+    difference_2 = set(new_parents).difference(set(current_parents))
+    list_difference = list(difference_1.union(difference_2))
+    print('[debug] list_difference: ', list_difference)
+    try:
+        service = build('drive', 'v3', credentials=creds)
+        file = service.files().update(
+            fileId=file_id,
+            addParents=new_parents[len(new_parents)-1],
+            removeParents=",".join(list_difference),
+            fields='id, parents'
+        ).execute()
+        return file
+    except HttpError as error:
+        print(F'An error occurred: {error}')
+        return {'moved': False, 'reason': error.error_details}
+
+#Get remote file object from database
+def get_file(file_id, drive_files):
+    File = Query()
+    qry = drive_files.search(File.id == file_id)
+    if len(qry) > 0:
+        return qry[0]
+    return None
+
+def validadeMoveAction(local_files, drive_files):
+    File = Query()
+    qry = local_files.search((File.sameHash == True) & (File.samePath == False))
+    for file in qry:
+        remote_file = get_file(file["remoteFileId"], drive_files)
+        if remote_file and 'action' in remote_file.keys():
+            if remote_file['action'] == 'skip':
+                db_update = {'action': 'move'}
+            else:
+                db_update = {'action': 'upload'}
+            local_files.update(db_update, File.relativePath == file['relativePath'])

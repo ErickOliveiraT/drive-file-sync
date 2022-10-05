@@ -23,7 +23,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-def run(profile, action):
+def run(profile, action, run_sync):
     start_time = time.time()
 
     #remote drive files database
@@ -67,49 +67,71 @@ def run(profile, action):
         #verify if drive files has to be transfered
         drive.verify_sync(drive_files, local_files, profile.get('sync_deletions'))
 
+        #force move action on files that need
+        drive.validadeMoveAction(local_files, drive_files)
+
         print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
+
     #sync
-    print(f'{datetime.now()}: Starting file sync')
-    start_time = time.time()
-    sync.sync(local_files, drive_files, profile.get('remote_folder_id'), creds)
-    print(f'{datetime.now()}: File sync finished\n')
+    if run_sync:
+        print(f'{datetime.now()}: Starting file sync')
+        start_time = time.time()
+        sync.sync(local_files, drive_files, profile.get('remote_folder_id'), creds)
+        print(f'{datetime.now()}: File sync finished\n')
 
     print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
 
 if __name__ == '__main__':
     while True:
-        print('[1] Create profile\n[2] Start synchronization\n[3] Delete profile\n[4] Resume synchronization\n[5] Synchronization status\n[6] Exit\n')
+        print('[1] Create profile')
+        print('[2] Delete profile')
+        print('[3] Check')
+        print('[4] Start synchronization')
+        print('[5] Resume synchronization')
+        print('[6] Synchronization status')
+        print('[7] Exit\n')
         option = int(input('Option: '))
-        if option == 1:
+        if option == 1: #Create profile
             profiles.create_profile()
-        elif option == 2:
+        elif option == 3: #Check
             filename = profiles.list_profiles()
             with open(filename) as json_file:
                 profile = json.load(json_file)
             print('')
-            run(profile, 'start')
-        elif option == 3:
+            run(profile, 'start', False)
+        elif option == 4: #Start sync
+            option = input('\nRun check? (y/n): ')
+            if option == 'y' or option == 'Y':
+                action = 'start'
+            else:
+                action = 'resume'
+            filename = profiles.list_profiles()
+            with open(filename) as json_file:
+                profile = json.load(json_file)
+            print('')
+            run(profile, action, True)
+        elif option == 2: #Delete profile
             filename = profiles.list_profiles()
             option = input(f'\nAre you sure you want to delete "{files.getProfileName(filename)}"? (y/n): ')
             if option == 'y' or option == 'Y':
                 os.remove(filename)
             print('')
-        elif option == 4:
+        elif option == 5: #Resume sync
             filename = profiles.list_profiles()
             with open(filename) as json_file:
                 profile = json.load(json_file)
             print('')
-            run(profile, 'resume')
-        elif option == 5:
+            run(profile, 'resume', True)
+        elif option == 6: #Sync status
             filename = profiles.list_profiles()
             with open(filename) as json_file:
                 profile = json.load(json_file)
             print('')
             sync.status(profile)
-        elif option == 6:
+        elif option == 7: #Exit
             sys.exit(0)
-        else:
+        else: #Default
             print('\nInvalid option')
             sys.exit(0)

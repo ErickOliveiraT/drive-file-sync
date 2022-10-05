@@ -5,8 +5,9 @@ import drive
 import sys
 
 def sync(local_files, drive_files, remote_dir, creds):
-    #create non-existing folders on google drive
     File = Query()
+
+    #create non-existing folders on google drive
     qry = local_files.search((File.type == 'folder') & (File.action == 'upload'))
     for i in range(0, len(qry)):
         qry[i]['paths_count'] = len(qry[i]['relativePath'].split('/')) - 1
@@ -44,6 +45,22 @@ def sync(local_files, drive_files, remote_dir, creds):
             db_update = {"exists": True, "samePath": True, "sameHash": True, "action": "skip"}
             local_files.update(db_update, File.relativePath == file["relativePath"])
     print(f'{datetime.now()}: All files uploaded!')
+
+    #moving files that already exists, buts it's in other path
+    qry = local_files.search(File.action == 'move')
+    print(f'{datetime.now()}: Moving files...')
+    for file in qry:
+        if 'remoteFileId' in file.keys():
+            remote_file = drive_files.search(File.id == file["remoteFileId"])
+            if len(remote_file) > 0:
+                remote_file = remote_file[0]
+            else:
+                continue
+            new_parents = drive.get_parent_ids(file["relativePath"], drive_files, remote_dir)
+            print(f'{datetime.now()}: Moving {file["name"]} to {new_parents}')
+            res = drive.move_file(remote_file["id"], remote_file["parents"], new_parents, creds)
+            print('[debug] RES = ', res)
+            #sys.exit()
 
     #update files on google drive (delete/re-upload)
     qry = local_files.search(File.action == 'update')
@@ -103,7 +120,6 @@ def status(profile):
     for file in drive_files.all():
         if 'action' in file.keys() and file['action'] != 'skip':
             table.append([file['relativePath'], 'remote', file['action']])
-
 
     print(tabulate(table, headers='firstrow', tablefmt='fancy_grid', showindex=True))
     return print('\n')

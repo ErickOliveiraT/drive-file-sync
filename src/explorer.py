@@ -3,6 +3,7 @@ from tinydb import Query
 import files
 import drive
 import os
+import sys
 
 def list_files(path, local_files, root_dir, drive_files, ignore=[]):
     if root_dir[len(root_dir)-1] == '\\' or root_dir[len(root_dir)-1] == '/':
@@ -30,6 +31,7 @@ def list_files(path, local_files, root_dir, drive_files, ignore=[]):
             res = drive.find_file(file, drive_files)
             file.update(res)
             print(f'{datetime.now()}: {file["name"]} {res}')
+
             #verify if files has to be transfered
             if file["exists"] and file["samePath"]:
                 if file["type"] == 'file':
@@ -40,9 +42,15 @@ def list_files(path, local_files, root_dir, drive_files, ignore=[]):
                 else:
                     action = 'skip'
             elif file["exists"] and not file["samePath"]:
-                action = 'move' #upload and delete
+                remote_file = drive.get_file(file["remoteFileId"], drive_files)
+                if remote_file and 'action' in remote_file.keys():
+                    if remote_file['action'] != 'skip':
+                        action = 'move'
+                    else:
+                        action = 'upload'
             elif not file["exists"]:
                 action = 'upload'
+
             print(f'{datetime.now()}: {file["name"]} action = {action}')
             file["action"] = action
             local_files.insert(file)
@@ -57,12 +65,22 @@ def find_file(file, local_files):
         #Search by MD5 checksum
         match = local_files.search(File.md5Checksum == file["md5Checksum"])
         if len(match) > 0:
+            for local_file in match:
+                if file["relativePath"] == local_file["relativePath"]: 
+                    return {
+                        "exists": True,
+                        "sameFilename": file["name"] == local_file["name"],
+                        "sameCreateDate": file["createdTime"].split('.')[0] == local_file["createdTime"].split('.')[0],
+                        "sameModificationDate": file["modifiedTime"].split('.')[0] == local_file["modifiedTime"].split('.')[0],
+                        "samePath": True,
+                        "sameHash": True
+                    }
             return {
                 "exists": True,
-                "sameFilename": file["name"] == match[0]["name"],
-                "sameCreateDate": file["createdTime"].split('.')[0] == match[0]["createdTime"].split('.')[0],
-                "sameModificationDate": file["modifiedTime"].split('.')[0] == match[0]["modifiedTime"].split('.')[0],
-                "samePath": file["relativePath"] == match[0]["relativePath"],
+                "sameFilename": file["name"] == local_file["name"],
+                "sameCreateDate": file["createdTime"].split('.')[0] == local_file["createdTime"].split('.')[0],
+                "sameModificationDate": file["modifiedTime"].split('.')[0] == local_file["modifiedTime"].split('.')[0],
+                "samePath": False,
                 "sameHash": True
             }
         else:
