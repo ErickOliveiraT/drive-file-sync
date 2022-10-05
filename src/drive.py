@@ -196,7 +196,7 @@ def delete(file_id, creds):
     try:
         service = build('drive', 'v3', credentials=creds)
         service.files().delete(fileId=file_id, fields='id, name').execute()
-        return True
+        return {'deleted': True}
     except HttpError as error:
         print(F'An error occurred: {error}')
-        return False
+        return {'deleted': False, 'reason': error.error_details[0]['reason']}
