@@ -2,7 +2,6 @@ from datetime import datetime
 from tabulate import tabulate
 from tinydb import TinyDB, Query, where
 import drive
-import sys
 
 def sync(local_files, drive_files, remote_dir, creds):
     File = Query()
@@ -15,17 +14,14 @@ def sync(local_files, drive_files, remote_dir, creds):
     for folder in qry:
         print(f'{datetime.now()}: Creating folder "{folder["name"]}"')
         parents = drive.get_parent_ids(folder['relativePath'], drive_files, remote_dir)
-        #print(f'[debug] PARENTS OF {folder["name"]} = ', parents)
         if parents and len(parents) > 0:
             res = drive.create_folder(folder["name"], parents, creds)
-            if res and res["id"]:
-                print(f'{datetime.now()}: Folder has created with ID "{res["id"]}"')
-                #print(f'[debug] res = {res}')
+            if res:
+                print(f'{datetime.now()}: Folder was created with ID "{res["id"]}"')
                 db_update = {"exists": True, "action": 'skip'}
                 local_files.update(db_update, File.relativePath == folder['relativePath'])
                 new_folder = {"type": "folder", "relativePath": folder['relativePath']}
                 new_folder.update(res)
-                #print(f'[debug] db_update = {db_update}')
                 drive_files.insert(new_folder)
 
     #create non-existing files on google drive
@@ -33,12 +29,9 @@ def sync(local_files, drive_files, remote_dir, creds):
     for file in qry:
         print(f'{datetime.now()}: Uploading {file["name"]}')
         parents = drive.get_parent_ids(file["relativePath"], drive_files, remote_dir)
-        #print(f'[debug] parents = {parents}')
         res = drive.upload_basic(file["name"], file["absPath"], parents, creds)
-        #print(f'[debug] res = {res}')
-        # if not res: 
-        #     sys.exit(0)
         if res:
+            print(f'{datetime.now()}: File was uploaded with ID "{res["id"]}"')
             new_file = {"type": "file", "relativePath": file["relativePath"] }
             new_file.update(res)
             drive_files.insert(new_file)
@@ -46,21 +39,22 @@ def sync(local_files, drive_files, remote_dir, creds):
             local_files.update(db_update, File.relativePath == file["relativePath"])
     print(f'{datetime.now()}: All files uploaded!')
 
-    #moving files that already exists, buts it's in other path
-    qry = local_files.search(File.action == 'move')
-    print(f'{datetime.now()}: Moving files...')
+    #copying files that already exists, buts it's in other path
+    qry = local_files.search(File.action == 'copy')
+    print(f'{datetime.now()}: Copying files...')
     for file in qry:
-        if 'remoteFileId' in file.keys():
-            remote_file = drive_files.search(File.id == file["remoteFileId"])
-            if len(remote_file) > 0:
-                remote_file = remote_file[0]
-            else:
-                continue
-            new_parents = drive.get_parent_ids(file["relativePath"], drive_files, remote_dir)
-            print(f'{datetime.now()}: Moving {file["name"]} to {new_parents}')
-            res = drive.move_file(remote_file["id"], remote_file["parents"], new_parents, creds)
-            print('[debug] RES = ', res)
-            #sys.exit()
+        remote_file = drive_files.search(File.id == file["remoteFileId"])
+        if len(remote_file) > 0:
+            remote_file = remote_file[0]
+        else:
+            continue
+        new_parents = drive.get_parent_ids(file["relativePath"], drive_files, remote_dir)
+        print(f'{datetime.now()}: Copying {file["name"]} to {new_parents}')
+        res = drive.copy_file(file["remoteFileId"], new_parents, creds)
+        if res:
+            print(f'{datetime.now()}: {file["name"]} copied to {new_parents}')
+            db_update = {'samePath': True, 'remoteFileId': res["id"], 'action': 'skip'}
+            local_files.update(db_update, File.relativePath == file["relativePath"])
 
     #update files on google drive (delete/re-upload)
     qry = local_files.search(File.action == 'update')
@@ -120,6 +114,9 @@ def status(profile):
     for file in drive_files.all():
         if 'action' in file.keys() and file['action'] != 'skip':
             table.append([file['relativePath'], 'remote', file['action']])
+
+    if len(table) == 1:
+        return print('No actions to do!\n')
 
     print(tabulate(table, headers='firstrow', tablefmt='fancy_grid', showindex=True))
     return print('\n')

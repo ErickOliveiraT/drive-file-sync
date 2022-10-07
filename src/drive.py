@@ -73,8 +73,7 @@ def find_file(file, drive_files):
                         "sameModificationDate": file["modifiedTime"].split('.')[0] == remote_file["modifiedTime"].split('.')[0],
                         "samePath": True,
                         "sameHash": True,
-                        "remoteFileId": remote_file['id'],
-                        "debug": 1
+                        "remoteFileId": remote_file['id']
                     }
             return {
                 "exists": True,
@@ -83,8 +82,7 @@ def find_file(file, drive_files):
                 "sameModificationDate": file["modifiedTime"].split('.')[0] == remote_file["modifiedTime"].split('.')[0],
                 "samePath": False,
                 "sameHash": True,
-                "remoteFileId": remote_file['id'],
-                "debug": 2
+                "remoteFileId": remote_file['id']
             }
         else:
             match = drive_files.search(File.relativePath == file["relativePath"])
@@ -115,30 +113,6 @@ def find_file(file, drive_files):
         else:
             return {"exists": False}
     return None
-
-#verify if drive files has to be transfered
-def verify_sync(drive_files, local_files, sync_deletions):
-    File = Query()
-    files = drive_files.all()
-    for drive_file in files:
-        #Find drive file on local files
-        res = explorer.find_file(drive_file, local_files)
-        print(f'{datetime.now()}: [drive] {drive_file["name"]} {res}')
-        if sync_deletions:
-            if not res["exists"]:
-                action = 'delete'
-            else:
-                action = 'skip'
-            print(f'{datetime.now()}: {drive_file["name"]} action = {action}')
-            db_update = {"action": action}
-            db_update.update(res)
-            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
-        else:
-            action = 'skip'
-            print(f'{datetime.now()}: [drive] {drive_file["name"]}: {action}')
-            db_update = {"action": action}
-            db_update.update(res)
-            drive_files.update(db_update, File.relativePath == drive_file['relativePath'])
 
 #create folder on google drive
 def create_folder(folder_name, parents, creds):
@@ -212,27 +186,19 @@ def delete(file_id, creds):
         print(F'An error occurred: {error}')
         return {'deleted': False, 'reason': error.error_details[0]['reason']}
 
-#Moves a file in Google Drive from one location to another
-def move_file(file_id, current_parents, new_parents, creds):
-    # print('[debug] file_id: ', file_id)
-    # print('[debug] current_parents: ', current_parents)
-    # print('[debug] new_parents: ', new_parents)
-    difference_1 = set(current_parents).difference(set(new_parents))
-    difference_2 = set(new_parents).difference(set(current_parents))
-    list_difference = list(difference_1.union(difference_2))
-    # print('[debug] list_difference: ', list_difference)
-    try:
-        service = build('drive', 'v3', credentials=creds)
-        file = service.files().update(
-            fileId=file_id,
-            addParents=new_parents[len(new_parents)-1],
-            removeParents=",".join(list_difference),
-            fields='id, parents'
-        ).execute()
-        return file
-    except HttpError as error:
-        print(F'An error occurred: {error}')
-        return {'moved': False, 'reason': error.error_details}
+#Copy a file to another location
+def copy_file(file_id, parents, creds):
+  service = build('drive', 'v3', credentials=creds)
+  copied_file = {'parents': parents}
+  try:
+    file = service.files().copy(
+        fileId=file_id,
+        body=copied_file
+    ).execute()
+    return file
+  except HttpError as error:
+    print(F'An error occurred: {error}')
+    return None
 
 #Get remote file object from database
 def get_file(file_id, drive_files):
@@ -242,14 +208,26 @@ def get_file(file_id, drive_files):
         return qry[0]
     return None
 
-def validadeMoveAction(local_files, drive_files):
+#get file sync action
+def get_actions(drive_files):
     File = Query()
-    qry = local_files.search((File.sameHash == True) & (File.samePath == False))
-    for file in qry:
-        remote_file = get_file(file["remoteFileId"], drive_files)
-        if remote_file and 'action' in remote_file.keys():
-            if remote_file['action'] == 'skip':
-                db_update = {'action': 'move'}
+    for file in drive_files.all():
+        if not file["exists"]:
+            action = 'delete'
+        else: #exists local file
+            if file["samePath"]:
+                action = 'skip'
             else:
-                db_update = {'action': 'upload'}
-            local_files.update(db_update, File.relativePath == file['relativePath'])
+                action = 'delete'
+        db_update = {'action': action}
+        drive_files.update(db_update, File.relativePath == file['relativePath'])
+
+#search corresponding files on local storage
+def find_files(drive_files, local_files):
+    File = Query()
+    for file in drive_files.all():
+        res = explorer.find_file(file, local_files)
+        if res:
+            file.update(res)
+            drive_files.update(file, File.relativePath == file['relativePath'])
+    return True

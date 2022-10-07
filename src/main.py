@@ -29,10 +29,18 @@ def run(profile, action, run_sync):
     #remote drive files database
     drive_files_db_path = './data/' + profile['profile_name'] + '_remote.json'
     if action == 'start':
-        print(f'{datetime.now()}: Cleaning database')
+        print(f'{datetime.now()}: Cleaning remote files database')
         if os.path.isfile(drive_files_db_path):
             os.remove(drive_files_db_path)
     drive_files = TinyDB(drive_files_db_path)
+
+    #local files database
+    local_files_db_path = './data/' + profile['profile_name'] + '_local.json'
+    if action == 'start':
+        print(f'{datetime.now()}: Cleaning local files database')
+        if os.path.isfile(local_files_db_path):
+            os.remove(local_files_db_path)
+    local_files = TinyDB(local_files_db_path)
 
     #start google drive service
     print(f'{datetime.now()}: Starting Google Drive Service')
@@ -51,27 +59,22 @@ def run(profile, action, run_sync):
         print(f'{datetime.now()}: Building paths for remote files')
         drive.build_paths(drive_files, None)
 
-    #local files database
-    local_files_db_path = './data/' + profile['profile_name'] + '_local.json'
-    if action == 'start':
-        print(f'{datetime.now()}: Cleaning database')
-        if os.path.isfile(local_files_db_path):
-            os.remove(local_files_db_path)
-    local_files = TinyDB(local_files_db_path)
-
     if action == 'start':
         #list local files
         print(f'{datetime.now()}: Checking local files')
         explorer.list_files(profile.get('local_folder_path'), local_files, profile.get('local_folder_path'), drive_files, profile.get('ignored_folders'))
+        
+        #find corresponding local files of remote files
+        print(f'{datetime.now()}: Comparing local and remote folders...')
+        drive.find_files(drive_files, local_files)
 
-        #verify if drive files has to be transfered
-        drive.verify_sync(drive_files, local_files, profile.get('sync_deletions'))
+        #get file actions
+        print(f'{datetime.now()}: Getting local files actions...')
+        explorer.get_actions(local_files)
+        print(f'{datetime.now()}: Getting remote files actions...')
+        drive.get_actions(drive_files)
 
-        #force move action on files that need
-        drive.validadeMoveAction(local_files, drive_files)
-
-        print(f'\nTook {(time.time() - start_time)/60} minutes\n')
-
+    print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
     #sync
     if run_sync:
@@ -79,8 +82,7 @@ def run(profile, action, run_sync):
         start_time = time.time()
         sync.sync(local_files, drive_files, profile.get('remote_folder_id'), creds)
         print(f'{datetime.now()}: File sync finished\n')
-
-    print(f'\nTook {(time.time() - start_time)/60} minutes\n')
+        print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
 
 if __name__ == '__main__':

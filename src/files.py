@@ -14,13 +14,10 @@ def getMD5sum(filename, blocksize=65536):
 def getMIMEType(filepath):
     try:
         mime = magic.Magic(mime=True)
-        #print('[debug] filepath = ', filepath)
         mimetype = mime.from_file(filepath)
-        #print(f'[debug] mimetype = {mimetype}')
         if mimetype.startswith('cannot open'):
             splitted = filepath.split('.')
             ext = splitted[len(splitted)-1]
-            #print('[debug] ext = ', ext)
             return genericMimeType(ext)
         return mimetype
     except: 
