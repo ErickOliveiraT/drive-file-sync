@@ -214,13 +214,13 @@ def delete(file_id, creds):
 
 #Moves a file in Google Drive from one location to another
 def move_file(file_id, current_parents, new_parents, creds):
-    print('[debug] file_id: ', file_id)
-    print('[debug] current_parents: ', current_parents)
-    print('[debug] new_parents: ', new_parents)
+    # print('[debug] file_id: ', file_id)
+    # print('[debug] current_parents: ', current_parents)
+    # print('[debug] new_parents: ', new_parents)
     difference_1 = set(current_parents).difference(set(new_parents))
     difference_2 = set(new_parents).difference(set(current_parents))
     list_difference = list(difference_1.union(difference_2))
-    print('[debug] list_difference: ', list_difference)
+    # print('[debug] list_difference: ', list_difference)
     try:
         service = build('drive', 'v3', credentials=creds)
         file = service.files().update(
