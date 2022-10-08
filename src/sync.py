@@ -74,6 +74,18 @@ def sync(local_files, drive_files, remote_dir, creds):
             local_files.update(db_update, File.relativePath == file["relativePath"])
     print(f'{datetime.now()}: All files updated!')
 
+    #delete remote files witch doesn't exist
+    qry = drive_files.search((File.action == 'delete') & (File.type == 'file'))
+    for file in qry:
+        print(f'{datetime.now()}: Deleting {file["name"]} ({file["id"]})')
+        res = drive.delete(file['id'], creds)
+        if res["deleted"]:
+            print(f'{datetime.now()}: Deleted "{file["name"]}" from Drive')
+            drive_files.remove(where('relativePath') == file['relativePath'])
+        else:
+            if res['reason'] and res['reason'] == 'notFound':
+                drive_files.remove(where('relativePath') == file['relativePath'])
+
     #delete remote folders witch doesn't exist
     qry = drive_files.search((File.action == 'delete') & (File.type == 'folder'))
     for folder in qry:
@@ -85,18 +97,6 @@ def sync(local_files, drive_files, remote_dir, creds):
         else:
             if res['reason'] and res['reason'] == 'notFound':
                 drive_files.remove(where('relativePath') == folder['relativePath'])
-
-    #delete remote files witch doesn't exist   
-    qry = drive_files.search((File.action == 'delete') & (File.type == 'file'))
-    for file in qry:
-        print(f'{datetime.now()}: Deleting {file["name"]} ({file["id"]})')
-        res = drive.delete(file['id'], creds)
-        if res["deleted"]:
-            print(f'{datetime.now()}: Deleted "{file["name"]}" from Drive')
-            drive_files.remove(where('relativePath') == file['relativePath'])
-        else:
-            if res['reason'] and res['reason'] == 'notFound':
-                drive_files.remove(where('relativePath') == file['relativePath'])
 
 #Show sync status
 def status(profile):

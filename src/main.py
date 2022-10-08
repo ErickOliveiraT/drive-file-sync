@@ -74,6 +74,11 @@ def run(profile, action, run_sync):
         print(f'{datetime.now()}: Getting remote files actions...')
         drive.get_actions(drive_files)
 
+        #get duplicated file on drive
+        print(f'{datetime.now()}: Searching for duplicated files on remote drive...')
+        dup_list = drive.duplicated_files(drive_files)
+        print(f'{datetime.now()}: Found {len(dup_list)} duplicated files.')
+
     print(f'\nTook {(time.time() - start_time)/60} minutes\n')
 
     #sync
@@ -89,7 +94,7 @@ if __name__ == '__main__':
     while True:
         print('[1] Create profile')
         print('[2] Delete profile')
-        print('[3] Check')
+        print('[3] Check profile')
         print('[4] Start synchronization')
         print('[5] Resume synchronization')
         print('[6] Synchronization status')

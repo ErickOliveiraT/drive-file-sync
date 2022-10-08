@@ -4,6 +4,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from datetime import datetime
 from tinydb import Query
+from uuid import uuid4
 import explorer
 import files
 
@@ -23,6 +24,7 @@ def list_files(parent_id, drive_service, drive_files, parents=None):
                 if parents:
                     file["parents"] = parents + file["parents"]
                 print(f'{datetime.now()}: Checking {file["name"]}')
+                file["uid"] = str(uuid4())
                 drive_files.insert(file)
                 if file["type"] == 'folder':
                     list_files(file["id"], drive_service, drive_files, file["parents"])
@@ -43,6 +45,7 @@ def build_paths(drive_files, file_id):
             return
     cache = {}
     for file in files:
+        del file["uid"]
         if len(file["parents"]) == 1:
             file["relativePath"] = './' + file["name"]
         else:
@@ -229,5 +232,23 @@ def find_files(drive_files, local_files):
         res = explorer.find_file(file, local_files)
         if res:
             file.update(res)
+            del file['uid']
             drive_files.update(file, File.relativePath == file['relativePath'])
     return True
+
+#get duplicated files
+def duplicated_files(drive_files):
+    File = Query()
+    dup_list = []
+    for file in drive_files.all():
+        if file["relativePath"] in dup_list:
+            continue
+        qry = drive_files.search(File.relativePath == file["relativePath"])
+        if len(qry) > 1:
+            for i in range(1,len(qry)):
+                dup = qry[i]
+                if not dup["relativePath"] in dup_list:
+                    dup_list.append("relativePath")
+                    db_update = {'action': 'delete', 'duplicated': True}
+                    drive_files.update(db_update, File.uid == file['uid'])
+    return dup_list
